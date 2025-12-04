@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -26,6 +27,47 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-geist-mono",
+});
+
+const notoSans = localFont({
+  src: [
+    {
+      path: "../public/fonts/NotoSans-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/NotoSans-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-noto-sans",
+  display: "swap",
+});
+
+const mmHeadline = localFont({
+  src: [
+    {
+      path: "../public/fonts/MMHeadlinePro-Regular.otf",
+      weight: "400",
+      style: "normal",
+    },
+  ],
+  variable: "--font-mm-headline",
+  display: "swap",
+});
+
+const mediaPreise = localFont({
+  src: [
+    {
+      path: "../public/fonts/p_MediaPreise.ttf",
+      weight: "400",
+      style: "normal",
+    },
+  ],
+  variable: "--font-media-preise",
+  display: "swap",
 });
 
 const LIGHT_THEME_COLOR = "hsl(0 0% 100%)";
@@ -55,28 +97,34 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      className={`${geist.variable} ${geistMono.variable}`}
+      className={`${geist.variable} ${geistMono.variable} ${notoSans.variable} ${mmHeadline.variable} ${mediaPreise.variable}`}
       // `next-themes` injects an extra classname to the body element to avoid
       // visual flicker before hydration. Hence the `suppressHydrationWarning`
       // prop is necessary to avoid the React hydration mismatch warning.
       // https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
       lang="en"
       suppressHydrationWarning
+      data-theme="light"
     >
       <head>
         <script
           // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
           dangerouslySetInnerHTML={{
-            __html: THEME_COLOR_SCRIPT,
+            __html: `(function() {
+  var html = document.documentElement;
+  html.classList.remove('dark');
+  html.setAttribute('data-theme', 'light');
+  ${THEME_COLOR_SCRIPT}
+})();`,
           }}
         />
       </head>
       <body className="antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          forcedTheme="light"
           disableTransitionOnChange
-          enableSystem
+          enableSystem={false}
         >
           <Toaster position="top-center" />
           <SessionProvider>{children}</SessionProvider>

@@ -91,6 +91,9 @@
 @theme {
   --font-sans: var(--font-geist);
   --font-mono: var(--font-geist-mono);
+  --font-noto-sans: var(--font-noto-sans);
+  --font-mm-headline: var(--font-mm-headline);
+  --font-media-preise: var(--font-media-preise);
 
   --breakpoint-toast-mobile: 600px;
 
@@ -197,14 +200,25 @@
     @apply border-border;
   }
 
+  html {
+    overflow-x: hidden;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: light;
+  }
+
   body {
     @apply bg-background text-foreground;
     overflow-x: hidden;
     position: relative;
   }
 
-  html {
-    overflow-x: hidden;
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: auto;
+    -ms-interpolation-mode: bicubic;
   }
 }
 
