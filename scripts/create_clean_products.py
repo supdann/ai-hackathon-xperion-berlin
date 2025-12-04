@@ -41,11 +41,8 @@ def extract_products_from_file(filepath):
         'date': 'DATE'
     }
 
-    # Check if SALES VALUE ANON exists (in promo file)
-    if 'SALES VALUE ANON' in df.columns:
-        product_cols['sales_value'] = 'SALES VALUE ANON'
-        product_cols['margin_value'] = 'MARGIN VALUE ANON'
-        product_cols['sales_qty'] = 'SALES QTY ANON'
+    # Note: We only process Stores and Web files (not Promo)
+    # All should have SALES VALUE, SALES QTY, MARGIN VALUE columns
 
     # Extract relevant columns
     products = df[[product_cols['sku'], product_cols['desc1'], product_cols['desc2'],
@@ -85,9 +82,9 @@ def main():
     output_path = base_path / 'data' / 'processed'
     output_path.mkdir(parents=True, exist_ok=True)
 
-    # Get all raw CSV files
-    csv_files = list(data_path.glob('raw_*.csv'))
-    print(f"Found {len(csv_files)} CSV files to process")
+    # Get all raw CSV files EXCEPT the Promo file (promo data should not be in products table)
+    csv_files = [f for f in data_path.glob('raw_*.csv') if 'Promo' not in f.name]
+    print(f"Found {len(csv_files)} CSV files to process (excluding Promo file)")
 
     # Extract products from all files
     all_products = []
