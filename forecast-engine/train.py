@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -15,28 +13,23 @@ from nn import ForecastNet
 @dataclass
 class TrainConfig:
   dataset_path: Path
-  epochs: int = 10
-  batch_size: int = 256
-  lr: float = 1e-3
-  weight_decay: float = 0.0
-  test_ratio: float = 0.2
-  seed: int = 42
-  num_workers: int = 0
+  epochs: int
+  batch_size: int
+  lr: float
+  weight_decay: float
+  test_ratio: float
+  seed: int
+  num_workers: int
 
 
-def split_dataset(
-  X: Tensor,
-  y: Tensor,
-  test_ratio: float,
-  seed: int,
-) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
-  n = X.shape[0]
+def split_dataset(input: Tensor, output: Tensor, test_ratio: float, seed: int) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+  n = input.shape[0]
   num_test = int(n * test_ratio)
   g = torch.Generator().manual_seed(seed)
   perm = torch.randperm(n, generator=g)
   test_idx = perm[:num_test]
   train_idx = perm[num_test:]
-  return X[train_idx], y[train_idx], X[test_idx], y[test_idx]
+  return input[train_idx], output[train_idx], input[test_idx], output[test_idx]
 
 
 def rmse_loss(pred: Tensor, target: Tensor, eps: float = 1e-12) -> Tensor:
@@ -70,33 +63,38 @@ def evaluate(model: ForecastNet, loader: DataLoader, device: torch.device) -> Tu
   return epoch_metrics(pred_all, tgt_all)
 
 
-def train_one_run(cfg: TrainConfig) -> None:
+def train(cfg: TrainConfig) -> None:
   # Load dataset
   data = torch.load(cfg.dataset_path, map_location="cpu")
-  X: Tensor = data["X"].float()
-  y: Tensor = data["y"].float()
+  input: Tensor = data["in"].float()
+  output: Tensor = data["out"].float()
 
   # Create splits
-  X_train, y_train, X_test, y_test = split_dataset(X, y, cfg.test_ratio, cfg.seed)
+  in_train, out_train, in_test, out_test = split_dataset(input, output, cfg.test_ratio, cfg.seed)
 
   # Device
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
   # Model
   model = ForecastNet().to(device)
-  if X.shape[1] != model.INPUT_DIM:
-    raise ValueError(f"Feature dimension mismatch: X has {X.shape[1]}, but model expects {model.INPUT_DIM}")
+  if input.shape[1] != model.INPUT_DIM:
+    raise ValueError(f"Feature dimension mismatch: X has {input.shape[1]}, but model expects {model.INPUT_DIM}")
+
+  # Run directory (one per training run)
+  ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+  run_dir = Path("checkpoints") / f"run-{ts}"
+  run_dir.mkdir(parents=True, exist_ok=True)
 
   # Dataloaders
   train_loader = DataLoader(
-    TensorDataset(X_train, y_train),
+    TensorDataset(in_train, out_train),
     batch_size=cfg.batch_size,
     shuffle=True,
     num_workers=cfg.num_workers,
     pin_memory=(device.type == "cuda"),
   )
   test_loader = DataLoader(
-    TensorDataset(X_test, y_test),
+    TensorDataset(in_test, out_test),
     batch_size=cfg.batch_size,
     shuffle=False,
     num_workers=cfg.num_workers,
@@ -138,21 +136,22 @@ def train_one_run(cfg: TrainConfig) -> None:
       f"test_rmse={test_rmse:.6f} test_mae={test_mae:.6f}"
     )
 
+    # Save model weights for this epoch (use test MAE in filename)
+    epoch_path = run_dir / f"epoch_{epoch:03d}_{test_mae:.6f}.pt"
+    torch.save(model.state_dict(), epoch_path)
+
   # Final evaluation for checkpoint metadata
   final_train_rmse, final_train_mae = evaluate(model, train_loader, device)
   final_test_rmse, final_test_mae = evaluate(model, test_loader, device)
 
-  # Checkpoint save (once per full training run)
-  ckpt_dir = Path("checkpoints")
-  ckpt_dir.mkdir(parents=True, exist_ok=True)
-  ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-  ckpt_path = ckpt_dir / f"run-{ts}.pt"
+  # Final checkpoint save into the run directory (once per full training run)
+  ckpt_path = run_dir / "final.pt"
   torch.save(
     {
       "model_state": model.state_dict(),
       "optimizer_state": optimizer.state_dict(),
       "config": asdict(cfg),
-      "input_dim": int(X.shape[1]),
+      "input_dim": int(input.shape[1]),
       "metrics": {
         "train_rmse": final_train_rmse,
         "train_mae": final_train_mae,
@@ -168,28 +167,18 @@ def train_one_run(cfg: TrainConfig) -> None:
 
 if __name__ == "__main__":
   import argparse
-
-  parser = argparse.ArgumentParser(description="Train ForecastNet on prepared dataset.pt")
-  parser.add_argument("--dataset", type=Path, default=Path("data/dataset.pt"))
-  parser.add_argument("--epochs", type=int, default=10)
-  parser.add_argument("--batch-size", type=int, default=256)
-  parser.add_argument("--lr", type=float, default=1e-3)
-  parser.add_argument("--weight-decay", type=float, default=0.0)
-  parser.add_argument("--test-ratio", type=float, default=0.2)
-  parser.add_argument("--seed", type=int, default=42)
-  parser.add_argument("--num-workers", type=int, default=0)
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-d", "--dataset", type=Path, required=True)
   args = parser.parse_args()
 
   cfg = TrainConfig(
     dataset_path=args.dataset,
-    epochs=args.epochs,
-    batch_size=args.batch_size,
-    lr=args.lr,
-    weight_decay=args.weight_decay,
-    test_ratio=args.test_ratio,
-    seed=args.seed,
-    num_workers=args.num_workers,
+    epochs=100,
+    batch_size=256,
+    lr=1e-3,
+    weight_decay=0.0,
+    test_ratio=0.2,
+    seed=1337,
+    num_workers=0,
   )
-  train_one_run(cfg)
-
-
+  train(cfg)

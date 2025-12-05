@@ -86,4 +86,4 @@ if __name__ == "__main__":
   dataset_output = torch.stack(tensor_list_output)
 
   print('Saving dataset...')
-  torch.save({"X": dataset_input, "y": dataset_output}, 'data/dataset.pt')
+  torch.save({"in": dataset_input, "out": dataset_output}, 'data/dataset.pt')

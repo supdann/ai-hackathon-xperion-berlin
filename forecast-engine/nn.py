@@ -53,7 +53,7 @@ class ForecastNet(nn.Module):
     x = self.dropout(x)
 
     x = self.out(x)
-    return x.squeeze(-1)
+    return x
 
   def num_parameters(self) -> int:
     return sum(p.numel() for p in self.parameters() if p.requires_grad)
