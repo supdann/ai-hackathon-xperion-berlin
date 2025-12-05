@@ -23,6 +23,7 @@ import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { Weather } from "./weather";
+import { Forecast } from "./forecast";
 
 const PurePreviewMessage = ({
   chatId,
@@ -175,6 +176,27 @@ const PurePreviewMessage = ({
                       <ToolOutput
                         errorText={undefined}
                         output={<Weather weatherAtLocation={part.output} />}
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            if (type === "tool-getForecast" && "toolCallId" in part && "state" in part) {
+              const { toolCallId, state } = part;
+
+              return (
+                <Tool defaultOpen={true} key={toolCallId}>
+                  <ToolHeader state={state} type="tool-getForecast" />
+                  <ToolContent>
+                    {state === "input-available" && "input" in part && (
+                      <ToolInput input={part.input} />
+                    )}
+                    {state === "output-available" && "output" in part && (
+                      <ToolOutput
+                        errorText={undefined}
+                        output={<Forecast forecastData={part.output} />}
                       />
                     )}
                   </ToolContent>

@@ -24,6 +24,7 @@ import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
+import { getForecast } from "@/lib/ai/tools/get-forecast";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { searchPromos } from "@/lib/ai/tools/search-promos";
@@ -192,6 +193,7 @@ export async function POST(request: Request) {
               ? []
               : [
                   "getWeather",
+                  "getForecast",
                   "createDocument",
                   "updateDocument",
                   "requestSuggestions",
@@ -202,6 +204,7 @@ export async function POST(request: Request) {
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
             getWeather,
+            getForecast,
             createDocument: createDocument({ session, dataStream }),
             updateDocument: updateDocument({ session, dataStream }),
             requestSuggestions: requestSuggestions({
