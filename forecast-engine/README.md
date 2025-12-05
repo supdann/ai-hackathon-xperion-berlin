@@ -29,12 +29,12 @@ Place the source Excel binary into `data/`, e.g. `data/promo_data.xlsb`.
 Build the tensor dataset (and product-name embeddings) from the file:
 
 ```bash
+python grouper.py -f data/promo_data.xlsb
 python datasetter.py -f data/promo_data.xlsb
 ```
 
 Outputs:
 - `data/dataset.pt` with tensors: `{ "in": <features>, "out": <targets> }`
-- Expects lookup dictionaries already in `data/`: `groups.json`, `subgroups.json`, `brands.json`, `type.json` (these are included in this repo). If you regenerate them in another flow, keep their keys and ordering stable.
 
 Note: Name embeddings are generated via OpenAI and cached in-memory during the run; ensure `OPENAI_API_KEY` is available. This step can take several minutes depending on the number of unique product names.
 
