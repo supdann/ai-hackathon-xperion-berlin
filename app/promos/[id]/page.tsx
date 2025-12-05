@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -148,7 +148,7 @@ const recommendedTemplates: PromoTemplate[] = [
   },
 ];
 
-export default function PromoDetailsPage() {
+function PromoDetailsContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -602,6 +602,20 @@ export default function PromoDetailsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PromoDetailsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <p className="text-muted-foreground">Loading promo details...</p>
+        </div>
+      }
+    >
+      <PromoDetailsContent />
+    </Suspense>
   );
 }
 
