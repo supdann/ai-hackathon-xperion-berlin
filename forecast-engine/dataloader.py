@@ -4,7 +4,8 @@ from typing import Generator
 import pandas as pd
 from pathlib import Path
 from pydantic import BaseModel
-from torch import Tensor, tensor
+import torch
+from tqdm import tqdm
 
 from utils import load_data, build_group_dict, build_subgroup_dict, build_brand_dict, build_type_dict
 
@@ -41,16 +42,19 @@ class DataRow(BaseModel):
   def from_df(cls, df: pd.DataFrame) -> Generator['DataRow', None, None]:
     return (cls.from_row(row) for _, row in df.iterrows())
   
-  def to_torch_tensor(self, group_dict: dict[int, str], subgroup_dict: dict[int, str], brand_dict: dict[str, str], type_dict: dict[str, str]) -> Tensor:
-    return tensor([
+  def to_torch_tensor(self, group_dict: dict[int, str], subgroup_dict: dict[int, str], brand_dict: dict[str, str], type_dict: dict[str, str]) -> torch.Tensor:
+    return torch.tensor([
       self.promo_start_date.timetuple().tm_yday,
       self.promo_end_date.timetuple().tm_yday,
       self.date.timetuple().tm_yday,
-      self.type,
-      list(group_dict).index(self.group),
-      list(subgroup_dict).index(self.subgroup),
-      self.brand,
-    ])
+      *[1 if key == self.type else 0 for key in type_dict.keys()],
+      *[1 if key == self.group else 0 for key in group_dict.keys()],
+      *[1 if key == self.subgroup else 0 for key in subgroup_dict.keys()],
+      *[1 if key == self.brand else 0 for key in brand_dict.keys()],
+      # product name embedding
+      self.sales_value,
+      self.margin_value,
+    ], dtype=torch.float32)
 
 if __name__ == "__main__":
   import argparse
@@ -61,15 +65,22 @@ if __name__ == "__main__":
   
   file = Path(__file__).parent / args.file
   assert file.exists() and file.is_file() and file.suffix == ".xlsb"
+  print('Loading data...')
   data = load_data(file)
 
+  print('Building dictionaries...')
   group_dict = build_group_dict(data, store=False)
   subgroup_dict = build_subgroup_dict(data, store=False)
   brand_dict = build_brand_dict(data, store=False)
   type_dict = build_type_dict(data, store=False)
 
-  for _, row in data.iterrows():
-    data_row = DataRow.from_row(row)
-    print(data_row)
-    print(data_row.to_torch_tensor(group_dict, subgroup_dict, brand_dict, type_dict).shape)
-    exit()
+  print('Building dataset...')
+  tensor_list: list[torch.Tensor] = []
+  for _, row in tqdm(data.iterrows(), total=len(data)):
+    torch_tensor = DataRow.from_row(row).to_torch_tensor(group_dict, subgroup_dict, brand_dict, type_dict)
+    tensor_list.append(torch_tensor)
+
+  dataset = torch.stack(tensor_list)
+
+  print('Saving dataset...')
+  torch.save(dataset, 'data/dataset.pt')

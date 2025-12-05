@@ -1,4 +1,3 @@
-from functools import lru_cache
 import json
 from pathlib import Path
 
@@ -14,8 +13,6 @@ def load_data(file: Path) -> pd.DataFrame:
   df['BRAND'] = df['BRAND'].str.strip()
   return df
 
-
-@lru_cache(maxsize=None)
 def build_group_dict(data: pd.DataFrame, store: bool = False) -> dict[int, str]:
   group_dict = dict(zip(data['CODE GROUP'], data['DESC GROUP']))
   if store:
@@ -24,7 +21,6 @@ def build_group_dict(data: pd.DataFrame, store: bool = False) -> dict[int, str]:
       f.write(json.dumps(group_dict))
   return group_dict
 
-@lru_cache(maxsize=None)
 def build_subgroup_dict(data: pd.DataFrame, store: bool = False) -> dict[int, str]:
   subgroup_dict = dict(zip(data['CODE SUBGROUP'], data['DESC SUBGROUP']))
   if store:
@@ -33,7 +29,6 @@ def build_subgroup_dict(data: pd.DataFrame, store: bool = False) -> dict[int, st
       f.write(json.dumps(subgroup_dict))
   return subgroup_dict
 
-@lru_cache(maxsize=None)
 def build_brand_dict(data: pd.DataFrame, store: bool = False) -> dict[str, str]:
   brand_dict = dict(zip(data['BRAND'], data['BRAND']))
   if store:
@@ -42,7 +37,6 @@ def build_brand_dict(data: pd.DataFrame, store: bool = False) -> dict[str, str]:
       f.write(json.dumps(brand_dict))
   return brand_dict
 
-@lru_cache(maxsize=None)
 def build_type_dict(data: pd.DataFrame, store: bool = False) -> dict[str, str]:
   type_dict = dict(zip(data['TYPE OF PROMO'], data['TYPE OF PROMO']))
   if store:
