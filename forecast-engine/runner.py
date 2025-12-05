@@ -126,6 +126,7 @@ def run(
   # Build batch by repeating x0 and setting last feature (margin) to each value
   X = x0.unsqueeze(0).repeat(num_points, 1)
   X[:, -1] = margins
+  # Keep sales_value (feature at -2) constant at the provided baseline
 
   # Standardize if scaler present
   if input_mean is not None and input_std is not None:
@@ -173,7 +174,8 @@ if __name__ == "__main__":
   lo = -args.sales_value
   hi = args.sales_value
   margins = torch.linspace(lo, hi, steps=len(preds), dtype=torch.float32).tolist()
-  print("margin,qty,total_margin")
+  print("margin,price,qty,total_margin")
   for m, p in zip(margins, preds):
+    price = args.sales_value + m
     mp = m * p  # margin * quantity
-    print(f"{m:.6f},{p:.6f},{mp:.6f}")
+    print(f"{m:.6f},{price:.6f},{p:.6f},{mp:.6f}")
