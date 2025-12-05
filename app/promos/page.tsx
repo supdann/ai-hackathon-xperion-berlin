@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { Promo } from "@/lib/db/schema";
@@ -175,13 +176,15 @@ export default function PromosPage() {
               </div>
 
               <div className="mt-auto flex gap-2 pt-4">
-                <Button
-                  className="flex-1 bg-red-600 font-bold text-white hover:bg-red-700 hover:text-white"
-                  type="button"
-                  variant="default"
-                >
-                  View Details
-                </Button>
+                <Link href={`/promos/${promo.id}`} className="flex-1">
+                  <Button
+                    className="w-full bg-red-600 font-bold text-white hover:bg-red-700 hover:text-white"
+                    type="button"
+                    variant="default"
+                  >
+                    View Details
+                  </Button>
+                </Link>
                 <Button
                   className="bg-red-600 font-bold text-white hover:bg-red-700 hover:text-white"
                   onClick={() => handleDeleteClick(promo)}

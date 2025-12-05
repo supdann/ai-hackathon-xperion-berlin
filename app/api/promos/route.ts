@@ -4,8 +4,30 @@ import { promo } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getPromos } from "@/lib/db/queries";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (id) {
+      // Fetch single promo by ID
+      const [promoData] = await db
+        .select()
+        .from(promo)
+        .where(eq(promo.id, id))
+        .limit(1);
+
+      if (!promoData) {
+        return NextResponse.json(
+          { error: "Promo not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ promo: promoData }, { status: 200 });
+    }
+
+    // Fetch all promos
     const promos = await getPromos();
     return NextResponse.json({ promos }, { status: 200 });
   } catch (error) {

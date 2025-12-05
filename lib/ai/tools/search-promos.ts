@@ -66,10 +66,26 @@ export const searchPromos = tool({
         };
       }
 
+      // Filter out products with 0% discount
+      const filteredResults = results.filter((r: any) => {
+        const discount = Number(r.discount_percent) || 0;
+        return discount > 0;
+      });
+
+      console.log('[searchPromos] Filtered results (excluding 0% discount):', filteredResults.length, 'items');
+
+      if (filteredResults.length === 0) {
+        console.log('[searchPromos] No results with discount found');
+        return {
+          reasoning: 'No promotional products with discounts found for the query. All matching products have 0% discount.',
+          products: [],
+        };
+      }
+
       console.log('[searchPromos] Returning results to AI');
       const output = {
-        reasoning: `Found ${results.length} promotional products that are semantically similar to the query '${query}'. The results are ranked by similarity score.`,
-        products: results.map((r: any) => ({
+        reasoning: `Found ${filteredResults.length} promotional products with discounts that are semantically similar to the query '${query}'. The results are ranked by similarity score and exclude products with 0% discount.`,
+        products: filteredResults.map((r: any) => ({
           promo_id: String(r.promo_id || ''),
           product_id: String(r.product_id || ''),
           promo_name: String(r.promo_name || ''),
