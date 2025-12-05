@@ -24,6 +24,7 @@ import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { Weather } from "./weather";
 import { Forecast } from "./forecast";
+import { SearchPromos } from "./search-promos";
 
 const PurePreviewMessage = ({
   chatId,
@@ -278,6 +279,27 @@ const PurePreviewMessage = ({
                             />
                           )
                         }
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            if (type === "tool-searchPromos") {
+              const { toolCallId, state } = part;
+
+              return (
+                <Tool defaultOpen={true} key={toolCallId}>
+                  <ToolHeader state={state} type="tool-searchPromos" />
+                  <ToolContent>
+                    {state === "input-available" && (
+                      <ToolInput input={part.input} />
+                    )}
+                    {state === "output-available" && (
+                      <ToolOutput
+                        errorText={undefined}
+                        output={<SearchPromos searchPromosData={part.output} />}
                       />
                     )}
                   </ToolContent>

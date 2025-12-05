@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS "Promo" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"promo_id" text NOT NULL,
+	"product_id" text NOT NULL,
+	"promo_name" text NOT NULL,
+	"product_name" text NOT NULL,
+	"brand" text,
+	"category" text NOT NULL,
+	"season_label" text NOT NULL,
+	"channel" text NOT NULL,
+	"base_price" real NOT NULL,
+	"discount_percent" real NOT NULL,
+	"promo_type" text NOT NULL,
+	"base_margin_percent" real NOT NULL,
+	"total_units_sold" integer NOT NULL,
+	"units_lift_percent" real,
+	"revenue_lift_percent" real,
+	"margin_impact_euros" real,
+	"profit_impact_euros" real
+);

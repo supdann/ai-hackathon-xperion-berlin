@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { openai } from '@ai-sdk/openai';
 import { searchPromoProducts } from '@/lib/db/promo-queries';
 
+// Product schema matching the Drizzle promo model
 const productSchema = z.object({
   promo_id: z.string().describe('The ID of the promotion'),
   product_id: z.string().describe('The ID of the product'),
@@ -24,6 +25,12 @@ const productSchema = z.object({
   similarity: z.number().describe('Semantic similarity score to the query'),
 });
 
+// Output schema matching the return structure
+const outputSchema = z.object({
+  reasoning: z.string().describe('Explanation of the search results'),
+  products: z.array(productSchema).describe('Array of promotional products matching the query'),
+});
+
 export const searchPromos = tool({
   description:
     "Search for promotional products using semantic search. Searches through 72,000+ promotional campaigns based on meaning and context.",
@@ -34,6 +41,7 @@ export const searchPromos = tool({
         "Natural language search query for promotional products (e.g., 'gaming products for Black Friday with good margins')",
       ),
   }),
+  outputSchema: outputSchema,
   execute: async (input) => {
     const { query } = input;
     try {
@@ -59,29 +67,33 @@ export const searchPromos = tool({
       }
 
       console.log('[searchPromos] Returning results to AI');
-      return {
+      const output = {
         reasoning: `Found ${results.length} promotional products that are semantically similar to the query '${query}'. The results are ranked by similarity score.`,
         products: results.map((r: any) => ({
-          promo_id: r.promo_id,
-          product_id: r.product_id,
-          promo_name: r.promo_name,
-          product_name: r.product_name,
-          brand: r.brand,
-          category: r.category,
-          season_label: r.season_label,
-          channel: r.channel,
-          base_price: r.base_price,
-          discount_percent: r.discount_percent,
-          promo_type: r.promo_type,
-          base_margin_percent: r.base_margin_percent,
-          total_units_sold: r.total_units_sold,
-          units_lift_percent: r.units_lift_percent,
-          revenue_lift_percent: r.revenue_lift_percent,
-          margin_impact_euros: r.margin_impact_euros,
-          profit_impact_euros: r.profit_impact_euros,
-          similarity: r.similarity,
+          promo_id: String(r.promo_id || ''),
+          product_id: String(r.product_id || ''),
+          promo_name: String(r.promo_name || ''),
+          product_name: String(r.product_name || ''),
+          brand: r.brand ? String(r.brand) : null,
+          category: String(r.category || ''),
+          season_label: String(r.season_label || ''),
+          channel: String(r.channel || ''),
+          base_price: Number(r.base_price) || 0,
+          discount_percent: Number(r.discount_percent) || 0,
+          promo_type: String(r.promo_type || ''),
+          base_margin_percent: Number(r.base_margin_percent) || 0,
+          total_units_sold: Number(r.total_units_sold) || 0,
+          units_lift_percent: r.units_lift_percent != null ? Number(r.units_lift_percent) : null,
+          revenue_lift_percent: r.revenue_lift_percent != null ? Number(r.revenue_lift_percent) : null,
+          margin_impact_euros: r.margin_impact_euros != null ? Number(r.margin_impact_euros) : null,
+          profit_impact_euros: r.profit_impact_euros != null ? Number(r.profit_impact_euros) : null,
+          similarity: Number(r.similarity) || 0,
         })),
       };
+
+      // Validate output against schema
+      const validatedOutput = outputSchema.parse(output);
+      return validatedOutput;
     } catch (error: any) {
       console.error("[searchPromos] Error in searchPromos tool:", error);
       return {

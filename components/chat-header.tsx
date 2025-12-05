@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memo, useState } from "react";
 import { toast } from "sonner";
@@ -69,6 +70,36 @@ function PureChatHeader({
             src="/images/MMS_Logo2024_Outline_sRGB.png"
             unoptimized
           />
+        </div>
+
+        <div className="ml-4 flex flex-row items-center gap-2">
+          <Link href="/promos">
+            <Button
+              className="h-8 px-3 text-sm md:h-fit md:px-4"
+              type="button"
+              variant="ghost"
+            >
+              Promos
+            </Button>
+          </Link>
+          <Link href="/promo-templates">
+            <Button
+              className="h-8 px-3 text-sm md:h-fit md:px-4"
+              type="button"
+              variant="ghost"
+            >
+              Templates
+            </Button>
+          </Link>
+          <Link href="/app">
+            <Button
+              className="h-8 px-3 text-sm md:h-fit md:px-4"
+              type="button"
+              variant="ghost"
+            >
+              Showcase
+            </Button>
+          </Link>
         </div>
 
         <div className="ml-auto flex flex-row items-center gap-1">

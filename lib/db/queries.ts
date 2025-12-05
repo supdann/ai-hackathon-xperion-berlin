@@ -25,6 +25,8 @@ import {
   type DBMessage,
   document,
   message,
+  promo,
+  type Promo,
   type Suggestion,
   stream,
   suggestion,
@@ -588,6 +590,17 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     throw new ChatSDKError(
       "bad_request:database",
       "Failed to get stream ids by chat id"
+    );
+  }
+}
+
+export async function getPromos(): Promise<Promo[]> {
+  try {
+    return await db.select().from(promo).orderBy(desc(promo.id));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get promos"
     );
   }
 }

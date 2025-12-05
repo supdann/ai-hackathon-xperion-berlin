@@ -236,3 +236,27 @@ export const unifiedPromoProduct = pgTable(
 );
 
 export type UnifiedPromoProduct = InferSelectModel<typeof unifiedPromoProduct>;
+
+// Promo table - matches the schema from search-promos tool
+export const promo = pgTable("Promo", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  promoId: text("promo_id").notNull(),
+  productId: text("product_id").notNull(),
+  promoName: text("promo_name").notNull(),
+  productName: text("product_name").notNull(),
+  brand: text("brand"),
+  category: text("category").notNull(),
+  seasonLabel: text("season_label").notNull(),
+  channel: text("channel").notNull(),
+  basePrice: real("base_price").notNull(),
+  discountPercent: real("discount_percent").notNull(),
+  promoType: text("promo_type").notNull(),
+  baseMarginPercent: real("base_margin_percent").notNull(),
+  totalUnitsSold: integer("total_units_sold").notNull(),
+  unitsLiftPercent: real("units_lift_percent"),
+  revenueLiftPercent: real("revenue_lift_percent"),
+  marginImpactEuros: real("margin_impact_euros"),
+  profitImpactEuros: real("profit_impact_euros"),
+});
+
+export type Promo = InferSelectModel<typeof promo>;
