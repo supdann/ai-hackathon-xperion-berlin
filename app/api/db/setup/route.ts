@@ -74,16 +74,16 @@ export async function GET() {
 
     // Get row count if table exists
     let rowCount = 0;
-    if ((tableCheck.rows[0] as any).has_table) {
+    if ((tableCheck[0] as any).has_table) {
       const countResult = await db.execute(
         sql`SELECT COUNT(*) as count FROM unified_promo_product`
       );
-      rowCount = Number((countResult.rows[0] as any).count);
+      rowCount = Number((countResult[0] as any).count);
     }
 
     return NextResponse.json({
-      vectorExtension: (vectorCheck.rows[0] as any).has_vector,
-      tableExists: (tableCheck.rows[0] as any).has_table,
+      vectorExtension: (vectorCheck[0] as any).has_vector,
+      tableExists: (tableCheck[0] as any).has_table,
       rowCount,
     });
 

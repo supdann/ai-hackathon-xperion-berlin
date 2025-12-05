@@ -25,9 +25,11 @@ const vector = customType<{ data: number[]; driverData: string }>({
     return 'vector(1536)';
   },
   toDriver(value: number[]): string {
-    return JSON.stringify(value);
+    // Format as [1,2,3] for pgvector (not JSON.stringify which adds quotes)
+    return `[${value.join(',')}]`;
   },
   fromDriver(value: string): number[] {
+    // Parse from [1,2,3] format
     return JSON.parse(value);
   },
 });

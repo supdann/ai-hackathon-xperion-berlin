@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from datetime import datetime
+import csv
 
 def excel_date_to_datetime(excel_date):
     """Convert Excel serial date to datetime."""
@@ -357,7 +358,7 @@ def main():
     # Save to CSV
     output_path = Path('/Users/smutyala/Desktop/ai-hackathon-xperion-berlin/data/processed')
     output_file = output_path / 'unified_promo_product_data.csv'
-    unified.to_csv(output_file, index=False)
+    unified.to_csv(output_file, index=False, quoting=csv.QUOTE_NONNUMERIC)
 
     print(f"\n✓ Created unified dataset: {output_file}")
     print(f"  Total rows: {len(unified):,}")

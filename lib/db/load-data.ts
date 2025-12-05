@@ -212,7 +212,7 @@ async function loadData() {
           marginAfterDiscountPercent: parseNumber(row.margin_after_discount_percent),
           marginImpactEuros: parseNumber(row.margin_impact_euros),
           profitImpactEuros: parseNumber(row.profit_impact_euros),
-          embedding: JSON.stringify(embedding),
+          embedding: embedding,
         });
       } catch (error) {
         console.warn(`   ⚠️  Failed to parse embedding for ${key}`);
