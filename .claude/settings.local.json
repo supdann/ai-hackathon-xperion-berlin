@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsx:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=8192\" npx tsx:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

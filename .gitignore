@@ -36,9 +36,12 @@ yarn-error.log*
 .env
 .vercel
 .env*.local
+.npmrc
 
 # Playwright
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/*
+
+data/
