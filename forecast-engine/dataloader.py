@@ -51,7 +51,7 @@ class DataRow(BaseModel):
       *[1 if key == self.group else 0 for key in group_dict.keys()],
       *[1 if key == self.subgroup else 0 for key in subgroup_dict.keys()],
       *[1 if key == self.brand else 0 for key in brand_dict.keys()],
-      # product name embedding
+      # product name embedding is missing !!!
       self.sales_value,
       self.margin_value,
     ], dtype=torch.float32)
@@ -75,12 +75,15 @@ if __name__ == "__main__":
   type_dict = build_type_dict(data, store=False)
 
   print('Building dataset...')
-  tensor_list: list[torch.Tensor] = []
+  tensor_list_input: list[torch.Tensor] = []
+  tensor_list_output: list[torch.Tensor] = []
   for _, row in tqdm(data.iterrows(), total=len(data)):
     torch_tensor = DataRow.from_row(row).to_torch_tensor(group_dict, subgroup_dict, brand_dict, type_dict)
-    tensor_list.append(torch_tensor)
+    tensor_list_input.append(torch_tensor)
+    tensor_list_output.append(torch.tensor([row['SALES QTY ANON']], dtype=torch.float32))
 
-  dataset = torch.stack(tensor_list)
+  dataset_input = torch.stack(tensor_list_input)
+  dataset_output = torch.stack(tensor_list_output)
 
   print('Saving dataset...')
-  torch.save(dataset, 'data/dataset.pt')
+  torch.save({"X": dataset_input, "y": dataset_output}, 'data/dataset.pt')
