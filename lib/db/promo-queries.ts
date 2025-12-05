@@ -33,9 +33,9 @@ export async function searchPromoProducts(embedding: number[]) {
         revenue_lift_percent,
         margin_impact_euros,
         profit_impact_euros,
-        1 - (embedding <=> '\\[${embedding.join(',')}\\]'::vector) as similarity
+        1 - (embedding <=> '[${embedding.join(',')}]'::vector) as similarity
       FROM unified_promo_product
-      ORDER BY embedding <=> '\\[${embedding.join(',')}\\]'::vector
+      ORDER BY embedding <=> '[${embedding.join(',')}]'::vector
       LIMIT 10
     `);
 
