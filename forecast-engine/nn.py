@@ -20,8 +20,8 @@ from torch.utils.data import DataLoader, TensorDataset, random_split
 # Output: - 1 unit, linear activation
 
 class ForecastNet(nn.Module):
-  # INPUT_DIM = 1292 # 3 + 3 + 160 + 592 + 500 + 32 + 2
-  INPUT_DIM = 1260
+  INPUT_DIM = 1292 # 3 + 3 + 160 + 592 + 500 + 32 + 2
+  # INPUT_DIM = 1260
   HIDDEN1_DIM = 512
   HIDDEN2_DIM = 256
   HIDDEN3_DIM = 128
