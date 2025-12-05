@@ -1,7 +1,10 @@
+from functools import lru_cache
 import json
 from pathlib import Path
 
+from dotenv import load_dotenv
 import pandas as pd
+import openai
 
 def load_data(file: Path) -> pd.DataFrame:
   df = pd.read_excel(file, engine="pyxlsb")
@@ -44,3 +47,26 @@ def build_type_dict(data: pd.DataFrame, store: bool = False) -> dict[str, str]:
     with open('data/type.json', 'w') as f:
       f.write(json.dumps(type_dict))
   return type_dict
+
+@lru_cache(maxsize=None)
+def openai_embedding(text: str, dimensions: int = 32) -> list[float]:
+  load_dotenv()
+  response = openai.embeddings.create(
+    input=text,
+    model="text-embedding-3-large",
+    dimensions=dimensions
+  )
+  return response.data[0].embedding
+
+def openai_embeddings_parallel(texts: list[str], dimensions: int = 32, max_workers: int = 20) -> dict[str, list[float]]:
+  from concurrent.futures import ThreadPoolExecutor, as_completed
+  from tqdm import tqdm
+  unique_texts = list(dict.fromkeys(texts))
+  results: dict[str, list[float]] = {}
+  with ThreadPoolExecutor(max_workers=max_workers) as ex:
+    futures = {ex.submit(openai_embedding, t, dimensions): t for t in unique_texts}
+    for fut in tqdm(as_completed(futures), total=len(futures), desc="Embeddings"):
+      t = futures[fut]
+      emb = fut.result()
+      results[t] = emb
+  return results

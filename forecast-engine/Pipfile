@@ -9,6 +9,8 @@ pyxlsb = "*"
 torch = "*"
 pydantic = "*"
 tqdm = "*"
+openai = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
