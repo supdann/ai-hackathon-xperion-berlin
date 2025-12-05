@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Tuple
 
@@ -20,6 +20,10 @@ class TrainConfig:
   test_ratio: float
   seed: int
   num_workers: int
+  use_input_standardization: bool = True
+  plateau_patience: int = 5
+  plateau_factor: float = 0.5
+  min_lr: float = 1e-6
 
 
 def split_dataset(input: Tensor, output: Tensor, test_ratio: float, seed: int) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
@@ -62,6 +66,17 @@ def evaluate(model: ForecastNet, loader: DataLoader, device: torch.device) -> Tu
   tgt_all = torch.cat(tgts, dim=0)
   return epoch_metrics(pred_all, tgt_all)
 
+def standardize_features(train_x: Tensor, test_x: Tensor) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+  """
+  Standardize inputs column-wise: (x - mean) / (std + 1e-8)
+  Returns standardized train_x, test_x and the (mean, std) tensors.
+  """
+  mean = train_x.mean(dim=0, keepdim=True)
+  std = train_x.std(dim=0, keepdim=True)
+  std = torch.where(std < 1e-8, torch.full_like(std, 1.0), std)
+  train_x_std = (train_x - mean) / std
+  test_x_std = (test_x - mean) / std
+  return train_x_std, test_x_std, mean.squeeze(0), std.squeeze(0)
 
 def train(cfg: TrainConfig) -> None:
   # Load dataset
@@ -72,6 +87,12 @@ def train(cfg: TrainConfig) -> None:
   # Create splits
   in_train, out_train, in_test, out_test = split_dataset(input, output, cfg.test_ratio, cfg.seed)
 
+  # Optional input standardization
+  input_mean: Tensor | None = None
+  input_std: Tensor | None = None
+  if cfg.use_input_standardization:
+    in_train, in_test, input_mean, input_std = standardize_features(in_train, in_test)
+
   # Device
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -81,7 +102,7 @@ def train(cfg: TrainConfig) -> None:
     raise ValueError(f"Feature dimension mismatch: X has {input.shape[1]}, but model expects {model.INPUT_DIM}")
 
   # Run directory (one per training run)
-  ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+  ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
   run_dir = Path("checkpoints") / f"run-{ts}"
   run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -103,6 +124,13 @@ def train(cfg: TrainConfig) -> None:
 
   # Optimizer
   optimizer = torch.optim.Adam(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+  scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer,
+    mode="min",
+    factor=cfg.plateau_factor,
+    patience=cfg.plateau_patience,
+    min_lr=cfg.min_lr,
+  )
 
   # Training
   print("Starting training...")
@@ -128,12 +156,15 @@ def train(cfg: TrainConfig) -> None:
     train_rmse, train_mae = evaluate(model, train_loader, device)
     test_rmse, test_mae = evaluate(model, test_loader, device)
     avg_loss = running_loss / max(n_batches, 1)
+    scheduler.step(test_rmse)
+    current_lr = optimizer.param_groups[0]["lr"]
 
     print(
       f"Epoch {epoch:03d}/{cfg.epochs} "
       f"loss={avg_loss:.6f} "
       f"train_rmse={train_rmse:.6f} train_mae={train_mae:.6f} "
-      f"test_rmse={test_rmse:.6f} test_mae={test_mae:.6f}"
+      f"test_rmse={test_rmse:.6f} test_mae={test_mae:.6f} "
+      f"lr={current_lr:.6e}"
     )
 
     # Save model weights for this epoch (use test MAE in filename)
@@ -159,6 +190,12 @@ def train(cfg: TrainConfig) -> None:
         "test_mae": final_test_mae,
       },
       "timestamp_utc": ts,
+      "input_scaler": (
+        {
+          "mean": input_mean.cpu() if input_mean is not None else None,
+          "std": input_std.cpu() if input_std is not None else None,
+        }
+      ),
     },
     ckpt_path,
   )
