@@ -26,6 +26,9 @@ import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
+import { searchPromos } from "@/lib/ai/tools/search-promos";
+import { getPromoDetails } from "@/lib/ai/tools/get-promo-details";
+import { getPromoStats } from "@/lib/ai/tools/get-promo-stats";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -192,6 +195,9 @@ export async function POST(request: Request) {
                   "createDocument",
                   "updateDocument",
                   "requestSuggestions",
+                  "searchPromos",
+                  "getPromoDetails",
+                  "getPromoStats",
                 ],
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
@@ -202,6 +208,9 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            searchPromos,
+            getPromoDetails,
+            getPromoStats,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

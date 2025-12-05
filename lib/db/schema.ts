@@ -2,16 +2,35 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  integer,
   json,
   jsonb,
   pgTable,
   primaryKey,
+  real,
+  serial,
   text,
   timestamp,
   uuid,
   varchar,
+  index,
+  customType,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import type { AppUsage } from "../usage";
+
+// Custom pgvector type for embeddings
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return 'vector(1536)';
+  },
+  toDriver(value: number[]): string {
+    return JSON.stringify(value);
+  },
+  fromDriver(value: string): number[] {
+    return JSON.parse(value);
+  },
+});
 
 export const user = pgTable("User", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
@@ -171,3 +190,47 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+// Promo Product table with pgvector embeddings
+export const unifiedPromoProduct = pgTable(
+  "unified_promo_product",
+  {
+    id: serial("id").primaryKey(),
+    promoId: text("promo_id").notNull(),
+    productId: text("product_id").notNull(),
+    promoName: text("promo_name").notNull(),
+    seasonLabel: text("season_label").notNull(),
+    category: text("category").notNull(),
+    productName: text("product_name").notNull(),
+    productSku: text("product_sku").notNull(),
+    brand: text("brand"),
+    basePrice: real("base_price").notNull(),
+    supplierCost: real("supplier_cost").notNull(),
+    baseMarginPercent: real("base_margin_percent").notNull(),
+    discountPercent: real("discount_percent").notNull(),
+    promoType: text("promo_type").notNull(),
+    dateStart: text("date_start"),
+    dateEnd: text("date_end"),
+    channel: text("channel").notNull(),
+    timesPromoted: integer("times_promoted").notNull(),
+    totalUnitsSold: integer("total_units_sold").notNull(),
+    baselineUnits: integer("baseline_units"),
+    unitsLiftPercent: real("units_lift_percent"),
+    revenueLiftPercent: real("revenue_lift_percent"),
+    marginAfterDiscountPercent: real("margin_after_discount_percent"),
+    marginImpactEuros: real("margin_impact_euros"),
+    profitImpactEuros: real("profit_impact_euros"),
+    embedding: vector("embedding").notNull(),
+  },
+  (table) => ({
+    seasonIdx: index("season_label_idx").on(table.seasonLabel),
+    categoryIdx: index("category_idx").on(table.category),
+    productIdIdx: index("product_id_idx").on(table.productId),
+    embeddingIdx: index("embedding_idx").using(
+      "ivfflat",
+      sql`${table.embedding} vector_cosine_ops`
+    ).with({ lists: 100 }),
+  })
+);
+
+export type UnifiedPromoProduct = InferSelectModel<typeof unifiedPromoProduct>;
